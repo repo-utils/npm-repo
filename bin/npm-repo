@@ -1,34 +1,30 @@
 #!/usr/bin/env node
 
 var program = require('commander')
-  .usage('[package name]')
-  .parse(process.argv)
+    .usage('[package name]')
+    .parse(process.argv);
 
-var name = program.args[0]
+var name = program.args[0];
 if (!name) {
-  console.error('a package name was not defined!')
-  process.exit(1)
+    console.error('a package name was not defined!');
+    process.exit(1);
 }
 
-require('request')('https://registry.npmjs.org/' + name, function (err, res, body) {
-  if (err) {
-    console.error(err.stack)
-    process.exit(1)
-  }
-  if (res.statusCode !== 200) {
-    console.error('a package by the name of "%s" was not found', name)
-    process.exit(1)
-  }
-  body = JSON.parse(body) // you're useless, request!
-
-  var repo = body.repository
-  if (!repo) {
-    console.error('package "%s" did not define a repository', name)
-    process.exit(1)
-  }
-
-  var url = require('url')
-  var obj = url.parse(repo.url)
-  if (obj.protocol !== 'https:') obj.protocol = 'https:'
-  require('open')(url.format(obj))
-})
+var npm = require('npm'),
+    open = require('open');
+npm.load({}, function(er) {
+    if (er) {
+        console.error(err);
+        process.exit(1);
+    }
+    npm.commands.view([name, "repository.url"], function(err, rurl) {
+        if (err) {
+            console.error(err);
+            process.exit(1);
+        }
+        var url = require('url')
+        var obj = url.parse(rurl[Object.keys(rurl)[0]]['repository.url']);
+        if (obj.protocol !== 'https:') obj.protocol = 'https:'
+        require('open')(url.format(obj))
+    });
+});
